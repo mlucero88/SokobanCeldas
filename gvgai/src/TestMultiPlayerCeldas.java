@@ -1,6 +1,8 @@
 import java.util.Random;
 
 import core.ArcadeMachine;
+import fiubaceldas.grupo04.ExceptionQuitGame;
+import fiubaceldas.grupo04.ExceptionRestart;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,9 +24,10 @@ public class TestMultiPlayerCeldas
         String sampleOLMCTSController = "controllers.multiPlayer.sampleOLMCTS.Agent";
         String sampleGAController = "controllers.multiPlayer.sampleGA.Agent";
         String humanController = "controllers.multiPlayer.human.Agent";
-
+        String grupo04Controller = "fiubaceldas.grupo04.Agent";
+        
         //definir acá los controladores usados para el juego (se necesitan 2 controladores separados por un espacio)
-        String controllers = randomController + " " + randomController;
+        String controllers = grupo04Controller + " " + grupo04Controller;
         //String controllers = sampleOLMCTSController + " " + sampleOLMCTSController;
 
         //ubicación de los juegos disponibles:
@@ -50,7 +53,16 @@ public class TestMultiPlayerCeldas
         
         //2. Esta línea sirve para iniciar el juego para dos controllers (es decir los agentes inteligentes). Si se quiere que uno de los jugadores
         //sea humano, cambiar el último paramtro (0) a 1.
-        ArcadeMachine.runOneGame(game, level1, visuals, controllers, recordActionsFile, seed, 0);
+        boolean quit = false;
+        while(!quit){
+             try{
+                    ArcadeMachine.runOneGame(game, level1, visuals, controllers, recordActionsFile, seed, 0);
+             }catch(ExceptionQuitGame eqg){
+                    quit=true;
+             }catch(ExceptionRestart er){
+                    System.out.println("reinicio juego");
+             }
+        }
 
         //3. Esta línea permite repetir un juego desde un archivo de acciones, que se haya grabado previamente
 //        String readActionsFile = recordActionsFile;
@@ -64,7 +76,5 @@ public class TestMultiPlayerCeldas
 //        	level1 = gamesPath + games[i] + "_lvl" + levelIdx +".txt";
 //        	ArcadeMachine.runGames(game, new String[]{level1}, M, controllers, null);
 //        }
-
-
     }
 }
