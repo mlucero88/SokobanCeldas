@@ -17,13 +17,13 @@ public class TestMultiPlayerCeldas
     public static void main(String[] args)
     {
         //Controladores disponibles de ejemplo:
-        String doNothingController = "controllers.multiPlayer.doNothing.Agent";
-        String randomController = "controllers.multiPlayer.sampleRandom.Agent";
-        String oneStepController = "controllers.multiPlayer.sampleOneStepLookAhead.Agent";
-        String sampleMCTSController = "controllers.multiPlayer.sampleMCTS.Agent";
-        String sampleOLMCTSController = "controllers.multiPlayer.sampleOLMCTS.Agent";
-        String sampleGAController = "controllers.multiPlayer.sampleGA.Agent";
-        String humanController = "controllers.multiPlayer.human.Agent";
+//        String doNothingController = "controllers.multiPlayer.doNothing.Agent";
+//        String randomController = "controllers.multiPlayer.sampleRandom.Agent";
+//        String oneStepController = "controllers.multiPlayer.sampleOneStepLookAhead.Agent";
+//        String sampleMCTSController = "controllers.multiPlayer.sampleMCTS.Agent";
+//        String sampleOLMCTSController = "controllers.multiPlayer.sampleOLMCTS.Agent";
+//        String sampleGAController = "controllers.multiPlayer.sampleGA.Agent";
+//        String humanController = "controllers.multiPlayer.human.Agent";
         String grupo04Controller = "fiubaceldas.grupo04.Agent";
         
         //definir acá los controladores usados para el juego (se necesitan 2 controladores separados por un espacio)
@@ -40,13 +40,12 @@ public class TestMultiPlayerCeldas
         int seed = new Random().nextInt();
 
         //Qué nivel se utiliza
-        int gameIdx = 0;
         int levelIdx = 0; //level names from 0 to 4 (game_lvlN.txt).
         String game = gamesPath + gameName + ".txt";
         String level1 = gamesPath + gameName + "_lvl" + levelIdx +".txt";
 
         //nombre de archivo en doned se guardaran las acciones ejecutadas. Si es null no guardará nada
-        String recordActionsFile = null;//"actions_" + games[gameIdx] + "_lvl" + levelIdx + "_" + seed + ".txt"; 
+        String recordActionsFile = "actions_" + gameName + "_lvl" + levelIdx + "_" + seed + ".txt"; 
 
         // 1. descomentar la línea de abajo para que el juego inicie para dos jugadores humanos
 //        ArcadeMachine.playOneGameMulti(game, level1, recordActionsFile, seed);
