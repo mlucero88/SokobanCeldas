@@ -6,79 +6,95 @@ import core.game.Observation;
 import core.game.StateObservationMulti;
 
 public class Perception {
+
+	/* Legend:
+	 * w: WALL
+	 * A: Agent A
+	 * 1: Box
+	 * 0: box destination
+	 * B: Agent B
+	 * .: empty space */
 	
-	/*Legend:
-	 *  w: WALL
-		A: Agent A
-		1: Box
-		0: box destination
-		B: Agent B
-		.: empty space
+	/* Sistema de referencia:
+	 * --------------> x+
+	 * |
+	 * |
+	 * |
+	 * |
+	 * V
+	 * y+
 	 * 
-	 * */
-	private char[][] level = null;
+	 */
+	
+	private char[][] map = null;
 	private int sizeWorldWidthInPixels;
 	private int sizeWorldHeightInPixels;
 	private int levelWidth;
 	private int levelHeight;
 	private int spriteSizeWidthInPixels;
 	private int spriteSizeHeightInPixels;
-	
-	public Perception(StateObservationMulti stateObs){
-		 	ArrayList<Observation>[][] grid = stateObs.getObservationGrid();
-	        ArrayList<Observation> observationList;
-	        Observation o;
-	        
-	        this.sizeWorldWidthInPixels= stateObs.getWorldDimension().width;
-	        this.sizeWorldHeightInPixels= stateObs.getWorldDimension().height;
-	        this.levelWidth = stateObs.getObservationGrid().length;
-	        this.levelHeight = stateObs.getObservationGrid()[0].length;
-	        this.spriteSizeWidthInPixels =  stateObs.getWorldDimension().width / levelWidth;
-	        this.spriteSizeHeightInPixels =  stateObs.getWorldDimension().height / levelHeight;
 
-	        this.level = new char[levelHeight][levelWidth];
-	        for(int i=0;i< levelWidth; i++){
-	        	for(int j=0;j< levelHeight; j++){
-	        		observationList = (grid[i][j]);
-	        		 if(!observationList.isEmpty()){
-	        			 o = observationList.get(observationList.size()-1);
-	        			 if(o.category == 4){
-	        				 if(o.itype == 3){
-	        					 this.level[j][i] = '0';
-	        				 }else if(o.itype == 0){
-	        					 this.level[j][i] = 'w';	 
-	        				 }
-	        				 
-	        			 }else if(o.category == 0){        				 
-	        				 if(o.itype == 5){
-	        					 this.level[j][i] = 'A';
-	        				 }else if(o.itype == 6){
-	        					 this.level[j][i] = 'B';
-	        				 }
-	        			 }else if(o.category == 6){
-	        				 this.level[j][i] = '1';
-	        			 }else{	        				 
-	        				 this.level[j][i] = '?';
-	        			 }
-	        		 }else{
-	        			 this.level[j][i] = '.';
-	        		 }
-	        	}	        	
-	        }
+	public Perception(StateObservationMulti stateObs) {
+		ArrayList<Observation>[][] grid = stateObs.getObservationGrid();
+		ArrayList<Observation> observationList;
+		Observation o;
+
+		this.sizeWorldWidthInPixels = stateObs.getWorldDimension().width;
+		this.sizeWorldHeightInPixels = stateObs.getWorldDimension().height;
+		this.levelWidth = stateObs.getObservationGrid().length;
+		this.levelHeight = stateObs.getObservationGrid()[0].length;
+		this.spriteSizeWidthInPixels = stateObs.getWorldDimension().width / levelWidth;
+		this.spriteSizeHeightInPixels = stateObs.getWorldDimension().height / levelHeight;
+
+		this.map = new char[levelWidth][levelHeight];
+		for (int x = 0; x < levelWidth; x++) {
+			for (int y = 0; y < levelHeight; y++) {
+				observationList = (grid[x][y]);
+				if (!observationList.isEmpty()) {
+					o = observationList.get(observationList.size() - 1);
+					if (o.category == 4) {
+						if (o.itype == 3) {
+							this.map[x][y] = '0';
+						}
+						else if (o.itype == 0) {
+							this.map[x][y] = 'w';
+						}
+
+					}
+					else if (o.category == 0) {
+						if (o.itype == 5) {
+							this.map[x][y] = 'A';
+						}
+						else if (o.itype == 6) {
+							this.map[x][y] = 'B';
+						}
+					}
+					else if (o.category == 6) {
+						this.map[x][y] = '1';
+					}
+					else {
+						this.map[x][y] = '?';
+					}
+				}
+				else {
+					this.map[x][y] = '.';
+				}
+			}
+		}
 	}
-	
-	public char getAt(int i, int j){
-		return level[i][j];
+
+	public char getAt(int x, int y) {
+		return map[x][y];
 	}
-	
-	public char[][] getLevel(){
-		return level;
+
+	public char[][] getMap() {
+		return map;
 	}
-	
+
 	public int getSizeWorldWidthInPixels() {
 		return sizeWorldWidthInPixels;
 	}
-	
+
 	public int getSizeWorldHeightInPixels() {
 		return sizeWorldHeightInPixels;
 	}
@@ -98,16 +114,16 @@ public class Perception {
 	public int getSpriteSizeHeightInPixels() {
 		return spriteSizeHeightInPixels;
 	}
-	
-	public String toString(){
+
+	public String toString() {
 		StringBuilder sb = new StringBuilder("");
-		if(level!=null){
-			 for(int i=0;i< level.length; i++){
-		        	for(int j=0;j<  level[i].length; j++){
-		        		sb.append(level[i][j]);
-		        	}
-		        	sb.append("\n");
-			 }
+		if (map != null) {
+			for (int y = 0; y < levelHeight; y++) {
+				for (int x = 0; x < levelWidth; x++) {
+					sb.append(map[x][y]);
+				}
+				sb.append("\n");
+			}
 		}
 		return sb.toString();
 	}
