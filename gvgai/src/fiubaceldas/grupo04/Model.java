@@ -2,22 +2,8 @@ package fiubaceldas.grupo04;
 
 public class Model {
 
-	public enum Direction {
-		NORTH("N"), SOUTH("S"), EAST("E"), WEST("W"), NORTHEAST("NE"), SOUTHEAST("SE"), NORTHWEST("NW"), SOUTHWEST("SW");
-
-		private String value;
-
-		private Direction(String direction) {
-			value = direction;
-		}
-
-		public String toString() {
-			return value;
-		}
-	}
-	
 	public enum Entity {
-		WALL('w'), EMPTY('.'), BOX('1'), DESTINATION('0'), AGENT_A('A'), AGENT_B('B');
+		WALL('w'), EMPTY('.'), BOX('1'), DESTINATION('0'), AGENT_A('A'), AGENT_B('B'), WILDCARD('*');
 
 		private char value;
 

@@ -6,14 +6,23 @@ import java.util.Set;
 
 import ontology.Types;
 
-public class Theory {
+public class Theory implements Cloneable {
 
-	public Predicates allegedConditions;
-	public Types.ACTIONS action;
-	public Boolean predictedEffects;
+	private static final int MAX_UTILITY_VALUE = 100;
+	
+	private Predicates initialConditions;
+	private Types.ACTIONS action;
+	private Predicates predictedEffects;
 	
 	private int usedCount = 0;
 	private int successCount = 0;
+	private int utilityValue = MAX_UTILITY_VALUE / 2;
+
+	public Theory(Predicates initialConditions, Types.ACTIONS action, Predicates predictedEffects) {
+		this.initialConditions = initialConditions;
+		this.action = action;
+		this.predictedEffects = predictedEffects;
+	}
 
 	public int getSuccessCount() {
 		return this.successCount;
@@ -32,7 +41,7 @@ public class Theory {
 	}
 
 	public boolean isSuccesful() {
-		return this.successCount == this.usedCount;
+		return successCount == usedCount;
 	}
 
 	public void copyExitosUsos(Theory t) {
@@ -40,63 +49,47 @@ public class Theory {
 		this.cantUsos = t.getUsedCount();
 	}
 
+	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
+		Theory t = new Theory();
+		t.allegedConditions = this.allegedConditions.exclusion(teoria.allegedConditions);
+		t.predictedEffects = new Boolean(this.predictedEffects);
+		return t;
+	}
+
 	/**
 	 * <h3>Una teoría A es igual a otra B cuando:</h3>
 	 * <ul>
-	 * <li>Ambas tienen las mismas acciones (en este caso no tenemos
-	 * acciones).</li>
-	 * <li>Las condiciones supuestas son iguales. Entiendase por iguales que son
-	 * literalmente iguales o
-	 * bien que las condiciones supuestas de A son más especificas, es decir más
-	 * restrictivas que las de B.
-	 * En otras palabras dada una SITUACIÓN S, puedo aplicar las teoría A o la
-	 * toría B, siendo B
-	 * una teoria más generica o a lo sumo igual que A.</li>
-	 * <li>Los efectos predichos por A son iguales o más especificos que los
-	 * predichos por B.
-	 * En este caso todos los efectos predichos son TRUE o FALSE, por lo cual
-	 * solo podemos
-	 * evaluar que sean iguales.</li>
+	 * <li>Ambas tienen las mismas acciones.</li>
+	 * <li>Las condiciones supuestas son iguales. Entiendase por iguales que son literalmente iguales o bien que las condiciones supuestas de A son
+	 * más especificas, es decir más restrictivas que las de B. En otras palabras dada una SITUACIÓN S, puedo aplicar la teoría A o la teoría B,
+	 * siendo B una teoria más generica o a lo sumo igual que A.</li>
+	 * <li>Los efectos predichos por A son iguales o más especificos que los predichos por B.</li>
 	 * </ul>
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+
 		Theory other = (Theory) obj;
 
-		if (this.allegedConditions != null && other.allegedConditions != null) {
-			if (!this.allegedConditions.equals(other.allegedConditions)) return false;
-		}
-		if (this.predictedEffects != null && other.predictedEffects != null) {
-			if (!this.predictedEffects.equals(other.predictedEffects)) return false;
-		}
-		return true;
+		return (this.action.equals(other.action) && this.initialConditions.equals(other.initialConditions)
+				&& this.predictedEffects.equals(other.predictedEffects));
 	}
 
 	/**
 	 * <h3>Una teoría A es similar a otra B cuando:</h3>
 	 * <ul>
-	 * <li>Ambas tienen las mismas acciones (en este caso no tenemos
-	 * acciones).</li>
-	 * <li>Los efectos predichos por A son iguales o más especificos que los
-	 * predichos por B.
-	 * En este caso todos los efectos predichos son TRUE o FALSE, por lo cual
-	 * solo podemos
-	 * evaluar que sean iguales.</li>
+	 * <li>Ambas tienen las mismas acciones.</li>
+	 * <li>Los efectos predichos por A son iguales o más especificos que los predichos por B.</li>
 	 * </ul>
 	 */
-	public boolean similar(Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
-		Theory other = (Theory) obj;
-
-		if (this.predictedEffects != null && other.predictedEffects != null) {
-			if (!this.predictedEffects.equals(other.predictedEffects)) return false;
-		}
-		return true;
+	public boolean similar(Theory other) {
+		return (this.action.equals(other.action) && this.predictedEffects.equals(other.predictedEffects));
 	}
 
 	/**
@@ -107,81 +100,64 @@ public class Theory {
 	 * </ul>
 	 */
 	public boolean incompatible(Theory other) {
-
-		if (this.allegedConditions != null && other.allegedConditions != null) {
-			if (this.predictedEffects != null && other.predictedEffects != null) {
-				if (this.allegedConditions.equals(other.allegedConditions)) {
-					if (!this.predictedEffects.equals(other.predictedEffects)) return true;
-				}
-			}
-		}
-		return false;
+		return (this.initialConditions.equals(other.initialConditions) && !this.predictedEffects.equals(other.predictedEffects));
 	}
 
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		Theory cloned = (Theory) super.clone();
-		cloned.allegedConditions = (Predicates) this.allegedConditions.clone();
-		cloned.predictedEffects = new Boolean(this.predictedEffects);
-		cloned.cantExitos = this.cantExitos;
-		cloned.cantUsos = this.cantUsos;
+		cloned.initialConditions = (Predicates) this.initialConditions.clone();
+		cloned.predictedEffects = (Predicates) this.predictedEffects.clone();
+		cloned.action = this.action;
+		cloned.usedCount = this.usedCount;
+		cloned.successCount = this.successCount;
+		cloned.utilityValue = this.utilityValue;
 		return cloned;
 	}
 
-	public static List<Theory> returnIguales(Theory source, Set<Theory> set) {
-		List<Theory> teoriasIguales = new ArrayList<Theory>();
-		for (Theory obj : set) {
-			if (source.equals(obj) && obj.isSuccesful()) teoriasIguales.add(obj);
-		}
-
-		return teoriasIguales;
-	}
-
-	public static List<Theory> returnSimilares(Theory source, Set<Theory> set) {
-		List<Theory> teoriasSimilares = new ArrayList<Theory>();
-		for (Theory obj : set) {
-			if (source.similar(obj)) teoriasSimilares.add(obj);
-		}
-
-		return teoriasSimilares;
-	}
-
-	public static List<Theory> returnErroneas(Theory source, Set<Theory> set) {
-		List<Theory> teoriasErroneas = new ArrayList<Theory>();
-		for (Theory obj : set) {
-			if (source.incompatible(obj)) {
-				teoriasErroneas.add(obj);
-			}
-		}
-		return teoriasErroneas;
-	}
-
-	public static List<Theory> returnExitosas(Set<Theory> set) {
-		List<Theory> teoriasExitosas = new ArrayList<Theory>();
-		for (Theory obj : set) {
-			if (obj.isSuccesful()) {
-				teoriasExitosas.add(obj);
-			}
-		}
-		return teoriasExitosas;
-	}
-
-	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
-		Theory t = new Theory();
-		t.allegedConditions = this.allegedConditions.exclusion(teoria.allegedConditions);
-		t.predictedEffects = new Boolean(this.predictedEffects);
-		return t;
-	}
-
+	@Override
 	public String toString() {
-		return this.toString(true);
-	}
-
-	public String toString(boolean csv) {
 		StringBuffer sb = new StringBuffer("");
-		sb.append(this.allegedConditions.toString(csv) + " ===> espero=" + String.valueOf(this.predictedEffects) + "; (" + this.cantExitos + ", "
-				+ this.cantUsos + ") ");
+		sb.append(initialConditions.toString() + " + " + action + " ===> " + predictedEffects.toString() + " (" + utilityValue + ", " + successCount
+				+ ", " + usedCount + ")");
 		return sb.toString();
 	}
 
+	public static List<Theory> returnEquals(Theory source, Set<Theory> sample) {
+		List<Theory> ret = new ArrayList<Theory>();
+		for (Theory t : sample) {
+			if (source.equals(t) && t.isSuccesful())
+				ret.add(t);
+		}
+		return ret;
+	}
+
+	public static List<Theory> returnSimilars(Theory source, Set<Theory> sample) {
+		List<Theory> ret = new ArrayList<Theory>();
+		for (Theory t : sample) {
+			if (source.similar(t))
+				ret.add(t);
+		}
+		return ret;
+	}
+
+	public static List<Theory> returnIncompatibles(Theory source, Set<Theory> sample) {
+		List<Theory> ret = new ArrayList<Theory>();
+		for (Theory t : sample) {
+			if (source.incompatible(t)) {
+				ret.add(t);
+			}
+		}
+		return ret;
+	}
+
+	public static List<Theory> returnSuccessful(Set<Theory> set) {
+		List<Theory> ret = new ArrayList<Theory>();
+		for (Theory t : set) {
+			if (t.isSuccesful()) {
+				ret.add(t);
+			}
+		}
+		return ret;
+	}
 }
