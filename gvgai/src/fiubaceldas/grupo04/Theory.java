@@ -8,15 +8,12 @@ import ontology.Types;
 
 public class Theory implements Cloneable {
 
-	private static final int MAX_UTILITY_VALUE = 100;
-	
 	private Predicates initialConditions;
 	private Types.ACTIONS action;
 	private Predicates predictedEffects;
 	
 	private int usedCount = 0;
 	private int successCount = 0;
-	private int utilityValue = MAX_UTILITY_VALUE / 2;
 
 	public Theory(Predicates initialConditions, Types.ACTIONS action, Predicates predictedEffects) {
 		this.initialConditions = initialConditions;
@@ -111,7 +108,6 @@ public class Theory implements Cloneable {
 		cloned.action = this.action;
 		cloned.usedCount = this.usedCount;
 		cloned.successCount = this.successCount;
-		cloned.utilityValue = this.utilityValue;
 		return cloned;
 	}
 

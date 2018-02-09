@@ -5,21 +5,19 @@ import java.util.Arrays;
 import fiubaceldas.grupo04.Model.Entity;
 
 public class Predicates implements Cloneable {
-
+	
+	/* Tiene la informacion de todo el mapa, como State, pero a diferencia de State, puede que en un casillero
+	 * haya un wildcard ('?'), indicando que no me importa esa posicion. Tengo que ver igual si estos wildcards
+	 * se generan al usar alguna heuristica... */
+	
 	private int width;
 	private int height;
 	private Entity[][] map;
 
-	public Predicates(Perception p) {
-		width = p.getLevelWidth();
-		height = p.getLevelHeight();
-		map = new Entity[width][height];
-
-		for (int x = 0; x < width; ++x) {
-			for (int y = 0; y < height; ++y) {
-				map[x][y] = Entity.fromChar(p.getAt(x, y));
-			}
-		}
+	public Predicates(State currentState) {
+		width = currentState.width;
+		height = currentState.height;
+		map = currentState.map.clone();
 	}
 	
 	public Predicates exclusion(Predicates pred) throws CloneNotSupportedException {
