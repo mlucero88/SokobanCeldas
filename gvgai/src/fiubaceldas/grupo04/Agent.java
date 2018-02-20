@@ -1,5 +1,6 @@
 package fiubaceldas.grupo04;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,8 +14,14 @@ import tools.ElapsedCpuTimer;
 
 public class Agent extends AbstractMultiPlayer {
 
-	private static final int TRAINING_ROUNDS = 1000;
+	private static final int MAX_TRAINING_GAMES = 10000;
 	private static final boolean TRAINING_MODE = true;
+
+	/* Horrible pero los objetos agentes van cambiando cuando se reinicia el juego y pierdo las teorias generadas.
+	 * Ademas no puedo pasarle las teorias anteriores como parametros al contructor */
+	private static ArrayList<Set<Theory>> theories = new ArrayList<Set<Theory>>(2);
+	private static boolean[] finished = new boolean[2];
+	private static int rounds = 0;
 
 	private State lastState = null;
 	private State currentState = null;
@@ -22,9 +29,6 @@ public class Agent extends AbstractMultiPlayer {
 	private Entity agentName;
 	private AgentKnowledge knowledge = null;
 	private int playerID;
-	private int rounds = 0;
-
-	public Set<Theory> theories = new HashSet<Theory>();
 
 	public Agent(StateObservationMulti stateObs, ElapsedCpuTimer elapsedTimer, int playerID) {
 		this.playerID = playerID;
@@ -32,13 +36,19 @@ public class Agent extends AbstractMultiPlayer {
 		if (!TRAINING_MODE) {
 			knowledge = AgentKnowledge.loadFromFile("agent_" + agentName.toString() + ".json");
 		}
+		else {
+			finished[playerID] = false;
+			while (theories.size() < 2) {
+				theories.add(new HashSet<Theory>());
+			}
+		}
 	}
 
 	@Override
 	public ACTIONS act(StateObservationMulti stateObs, ElapsedCpuTimer elapsedTimer) {
 		currentState = new State(new Perception(stateObs));
 		boolean isDeadlockState = currentState.isBoxDeadlock();
-		
+
 		if (!TRAINING_MODE) {
 			if (!isDeadlockState) {
 				return knowledge.getActionFromState(currentState);
@@ -46,93 +56,93 @@ public class Agent extends AbstractMultiPlayer {
 			System.out.println("*** PERDIMOS EL JUEGO !! ***");
 			throw new ExceptionQuitGame();
 		}
-		
+
 		/* A partir de aca es todo modo entrenamiento */
-		if (rounds++ >= TRAINING_ROUNDS) {
-			AgentKnowledge.saveToFile("agent_" + agentName.toString() + ".json", theories);
-			System.out.println("*** FINALIZÓ EL ENTRENAMIENTO DEL AGENTE_" + agentName.toString() + " ***");
+		if (rounds >= MAX_TRAINING_GAMES) {
+			if (!finished[playerID]) {
+				AgentKnowledge.saveToFile("agent_" + agentName.toString() + ".json", theories.get(playerID));
+				System.out.println("*** FINALIZÓ EL ENTRENAMIENTO DEL AGENTE_" + agentName.toString() + " ***");
+				finished[playerID] = true;
 
-			/* TODO Creo que solo va a guardar a disco el conocimiento del agente que primero llegue a esta parte
-			 * del codigo y el otro agente no va a guardar por arrojar la excepcion. Revisar al hacer la corrida */
-			throw new ExceptionQuitGame();
-		}
-		
-		if (isDeadlockState) {
-			// TODO Armo una teoria antes de reiniciar?
-			lastState = null;
-			currentState = null;
-			lastAction = null;
-
-			System.out.println("*** LLEGAMOS A UN DEADLOCK !! ***");
-			throw new ExceptionRestart();
-		}
-		
-
-		ACTIONS actionToTake = getRandomAction();
-
-		if (lastState == null) {
-			/* Es mi primera accion. Espero al turno siguiente para armar la teoria */
-			lastState = currentState;
-			lastAction = actionToTake;
-			return actionToTake;
-		}
-
-		/* AGARRAR LA PERCEPCION, ARMAR EL ESTADO A PARTIR DE LA PERCEPCION (ESTO SERIA EL MAPA SIN WILDCARDS), AGREGAR
-		 * EL ESTADO AL HISTORIAL. CHEQUEAR SI ESTAMOS EN UN ESTADO DE "FIN DE JUEGO" (CAJA CONTRA 2 PAREDES). 
-		 * 
-		 * [ENTRENAMIENTO!] CON CADA ACCION POSIBLE DEL JUGADOR, ARMAR UNA TEORIA CON EL ESTADO ACTUAL COMO CONDICION INICIAL (ESTO NO SE..DONDE
-		 * ENTRARIAN LOS WILDCARDS?) + LA ACCION + EL ESTADO ESPERADO, Q LO CALCULO TOMANDO COMO SUPOSICION Q EL OTRO JUGADOR NO SE MUEVE.
-		 * A ESTA TEORIA HAY Q ASIGNARLE UNA UTILIDAD, QUE PUEDO TOMAR COMO CRITERIO LA DISTANCIA DE LA CAJA A LA META PONDERADO CON LA DISTANCIA
-		 * DEL JUGADOR A LA CAJA (O ALGO ASI). UNA VEZ HECHO TODAS LAS TEORIAS, LAS GUARDO. LA PREGUNTA ES.. COMO LAS REFINO? SUPONGO QUE LA UTILIDAD
-		 * INCREMENTARA/DECREMENTARA A MEDIDA QUE LA TEORIA SE USE MAS VECES, O SEA NO DEBERIA "REINICIAR" EL MEDIDOR DE UTILIDAD ENTRE LAS 1000+ CORRIDAS
-		 * QUE HAGA PARA EL ENTRENAMIENTO.
-		 * UNA VEZ Q HAGA LAS 1000+ CORRIDAS, VUELVO TODO LO APRENDIDO A JSON
-		 * 
-		 * 
-		 * [YA ENTRENADO!] BUSCAR EN EL CONOCIMIENTO EL ESTADO ACTUAL Y ELEGIR LA ACCION QUE TIENE MAYOR UTILIDAD
-		 */
-
-		Theory localTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState)); // Armamos una teoria local
-
-		List<Theory> equalTheories = Theory.returnEquals(localTheory, theories); // verificamos si existe una teoria igual
-		if (!equalTheories.isEmpty()) {
-			for (Theory t : equalTheories) { // Sí existen teorias iguales las ponderamos
-				t.incSuccessCount();
-				t.incUsedCount();
-			}
-
-		}
-		else { // Si no hay teorias iguales
-			List<Theory> similarTheories = Theory.returnSimilars(localTheory, theories); // obtenemos las teorias similares
-			if (!similarTheories.isEmpty()) {
-				for (Theory t : similarTheories) {
-					Theory teoriaMutante = t.exclusion(localTheory); // para cada teoría similar aplicamos el algoritmo de exclusión
-					teoriaMutante.copyExitosUsos(t);
-					if (!theories.contains(teoriaMutante)) { // sí no existe la agregamos a la lista
-						theories.add(teoriaMutante);
-						theories.remove(t); // olvidamos la teoria anterior
-					}
+				if (finished[0] && finished[1]) {
+					throw new ExceptionQuitGame();
 				}
 			}
-			// Ponderamos y agregamos la teoria local
-			if (!theories.contains(localTheory)) {
-				localTheory.incSuccessCount();
-				localTheory.incUsedCount();
-				theories.add(localTheory);
+			return ACTIONS.ACTION_NIL;
+		}
+		else if (playerID == 0) {
+			// Solo el player A incrementa rondas
+			rounds++;
+		}
+
+		if (isDeadlockState) {
+			/* NO CONVIENE GUARDAR ESTA TEORIA DE FALLO XQ PUEDE SER QUE EL QUE MOVIO LA CAJA HACIA UN DEADLOCK HAYA SIDO
+			 * EL OTRO JUGADOR. SIEMPRE EL act DE player_A SE EJECUTA ANTES QUE EL DEL player_B, ENTONCES SI FUE player_B
+			 * QUIEN PUSO LA CAJA EN DEADLOCK, ESTOY GUARDANDO LA ULTIMA ACCION DE player_A COMO LA TEORIA QUE HIZO PERDER
+			 * EL JUEGO
+			 */
+			// Theory failedTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState));
+			// failedTheory.setCountersAsFailedTheory();
+			// theories.add(failedTheory);
+
+			throw new ExceptionRestart();
+		}
+
+		ACTIONS actionToTake = getRandomAction(currentState);
+
+		/* Salteo mi primera accion. Espero al turno siguiente para armar la teoria */
+		if (lastState != null) {
+			Theory localTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState)); // Armamos una teoria local
+
+			List<Theory> equalTheories = Theory.returnEquals(localTheory, theories.get(playerID)); // verificamos si existe una teoria igual
+			if (!equalTheories.isEmpty()) {
+				for (Theory t : equalTheories) { // Sí existen teorias iguales las ponderamos
+					t.incSuccessCount();
+					t.incUsedCount();
+				}
+			}
+			else { // Si no hay teorias iguales
+				List<Theory> similarTheories = Theory.returnSimilars(localTheory, theories.get(playerID)); // obtenemos las teorias similares
+				if (!similarTheories.isEmpty()) {
+					for (Theory t : similarTheories) {
+						Theory mutantTheory;
+						try {
+							mutantTheory = t.exclusion(localTheory); // para cada teoría similar aplicamos el algoritmo de exclusión
+						}
+						catch (CloneNotSupportedException e) {
+							e.printStackTrace();
+							return ACTIONS.ACTION_NIL;
+						}
+						mutantTheory.copyCounters(t);
+						if (!theories.get(playerID).contains(mutantTheory)) { // sí no existe la agregamos a la lista
+							theories.get(playerID).add(mutantTheory);
+							theories.get(playerID).remove(t); // olvidamos la teoria anterior
+						}
+					}
+				}
+				// Ponderamos y agregamos la teoria local
+				if (!theories.get(playerID).contains(localTheory)) {
+					localTheory.incSuccessCount();
+					localTheory.incUsedCount();
+					theories.get(playerID).add(localTheory);
+				}
+			}
+
+			// Ajustamos todas las teorias que son erroneas
+			List<Theory> incompatibleTheories = Theory.returnIncompatibles(localTheory, theories.get(playerID));
+			for (Theory t : incompatibleTheories) {
+				t.incUsedCount();
 			}
 		}
 
-		// Ajustamos todas las teorias que son erroneas
-		List<Theory> incompatibleTheories = Theory.returnIncompatibles(localTheory, theories);
-		for (Theory t : incompatibleTheories) {
-			t.incUsedCount();
-		}
-
-		return ACTIONS.ACTION_NIL;
+		lastState = currentState;
+		lastAction = actionToTake;
+		return actionToTake;
 	}
 
-	private ACTIONS getRandomAction() {
-		final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT, ACTIONS.ACTION_NIL };
-		return all[ThreadLocalRandom.current().nextInt(0, all.length)];
+	private ACTIONS getRandomAction(State state) {
+		ArrayList<ACTIONS> candidates = state.getPossibleActions(agentName);
+		candidates.add(ACTIONS.ACTION_NIL);
+		return candidates.get(ThreadLocalRandom.current().nextInt(0, candidates.size()));
 	}
 }

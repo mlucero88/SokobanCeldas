@@ -1,17 +1,20 @@
 package fiubaceldas.grupo04;
 
+import java.util.ArrayList;
+
 import fiubaceldas.grupo04.Model.Entity;
 import ontology.Types;
+import ontology.Types.ACTIONS;
 import tools.Vector2d;
 
 public class State {
-	
+
 	/* Pongo atributos public para no estar haciendo getters y tener q cambiarlos mientras
 	 * desarrollo, ya que no se si voy a estar cambiandolos mientras hago el tp */
 	public int width;
 	public int height;
 	public Entity[][] map;
-	
+
 	private String description;
 
 	public State(Perception p) {
@@ -26,7 +29,7 @@ public class State {
 				map[x][y] = Entity.fromChar(c);
 				sb.append(c);
 			}
-			sb.append("\\n");
+			sb.append("\n");
 		}
 
 		description = sb.toString();
@@ -37,22 +40,47 @@ public class State {
 	}
 
 	public boolean isBoxDeadlock() {
-		Vector2d boxPosition = locateBox();
+		Vector2d boxPosition = locateEntity(Entity.BOX);
 		Vector2d posUp = boxPosition.copy().add(Types.UP);
 		Vector2d posDown = boxPosition.copy().add(Types.DOWN);
 		Vector2d posLeft = boxPosition.copy().add(Types.LEFT);
 		Vector2d posRight = boxPosition.copy().add(Types.RIGHT);
-		
-		boolean isWallUp = map[(int)posUp.x][(int)posUp.y] == Entity.WALL;
-		boolean isWallDown = map[(int)posDown.x][(int)posDown.y] == Entity.WALL;
-		boolean isWallLeft = map[(int)posLeft.x][(int)posLeft.y] == Entity.WALL;
-		boolean isWallRight = map[(int)posRight.x][(int)posRight.y] == Entity.WALL;
-		
+
+		boolean isWallUp = map[(int) posUp.x][(int) posUp.y] == Entity.WALL;
+		boolean isWallDown = map[(int) posDown.x][(int) posDown.y] == Entity.WALL;
+		boolean isWallLeft = map[(int) posLeft.x][(int) posLeft.y] == Entity.WALL;
+		boolean isWallRight = map[(int) posRight.x][(int) posRight.y] == Entity.WALL;
+
 		if ((isWallUp && (isWallLeft || isWallRight)) || (isWallDown && (isWallLeft || isWallRight))) {
 			return true;
 		}
-		
+
 		return false;
+	}
+
+	public ArrayList<ACTIONS> getPossibleActions(Entity agent) {
+		ArrayList<ACTIONS> actions = new ArrayList<ACTIONS>();
+
+		Vector2d agentPos = locateEntity(agent);
+		Vector2d posUp = agentPos.copy().add(Types.UP);
+		Vector2d posDown = agentPos.copy().add(Types.DOWN);
+		Vector2d posLeft = agentPos.copy().add(Types.LEFT);
+		Vector2d posRight = agentPos.copy().add(Types.RIGHT);
+
+		if (map[(int) posUp.x][(int) posUp.y] != Entity.WALL) {
+			actions.add(ACTIONS.ACTION_UP);
+		}
+		if (map[(int) posDown.x][(int) posDown.y] != Entity.WALL) {
+			actions.add(ACTIONS.ACTION_DOWN);
+		}
+		if (map[(int) posLeft.x][(int) posLeft.y] != Entity.WALL) {
+			actions.add(ACTIONS.ACTION_LEFT);
+		}
+		if (map[(int) posRight.x][(int) posRight.y] != Entity.WALL) {
+			actions.add(ACTIONS.ACTION_RIGHT);
+		}
+
+		return actions;
 	}
 
 	@Override
@@ -86,10 +114,10 @@ public class State {
 		return true;
 	}
 
-	private Vector2d locateBox() {
+	private Vector2d locateEntity(Entity entity) {
 		for (int x = 0; x < width; ++x) {
 			for (int y = 0; y < height; ++y) {
-				if (map[x][y] == Entity.BOX) {
+				if (map[x][y] == entity) {
 					return new Vector2d(x, y);
 				}
 			}

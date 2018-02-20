@@ -20,39 +20,16 @@ public class Predicates implements Cloneable {
 		map = currentState.map.clone();
 	}
 	
-	public Predicates exclusion(Predicates pred) throws CloneNotSupportedException {
+	public Predicates exclusion(Predicates other) throws CloneNotSupportedException {
 		Predicates cloned = (Predicates) this.clone();
-
-//		if (pred.positionUp != null && cloned.positionUp != null) {
-//			if (!cloned.positionUp.equals(pred.positionUp)) {
-//				cloned.positionUp = null;
-//			}
-//		}
-//		if (pred.positionDown != null && cloned.positionDown != null) {
-//			if (!cloned.positionDown.equals(pred.positionDown)) {
-//				cloned.positionDown = null;
-//			}
-//		}
-//		if (pred.positionLeft != null && cloned.positionLeft != null) {
-//			if (!cloned.positionLeft.equals(pred.positionLeft)) {
-//				cloned.positionLeft = null;
-//			}
-//		}
-//		if (pred.positionRight != null && cloned.positionRight != null) {
-//			if (!cloned.positionRight.equals(pred.positionRight)) {
-//				cloned.positionRight = null;
-//			}
-//		}
-//		if (pred.directionBox != null && cloned.directionBox != null) {
-//			if (!cloned.directionBox.equals(pred.directionBox)) {
-//				cloned.directionBox = null;
-//			}
-//		}
-//		if (pred.directionDestination != null && cloned.directionDestination != null) {
-//			if (!cloned.directionDestination.equals(pred.directionDestination)) {
-//				cloned.directionDestination = null;
-//			}
-//		}
+		
+		for (int x = 0; x < cloned.width; ++x) {
+			for (int y = 0; y < cloned.height; ++y) {
+				if (cloned.map[x][y] != other.map[x][y]) {
+					cloned.map[x][y] = Entity.WILDCARD;
+				}
+			}
+		}
 
 		return cloned;
 	}
@@ -111,9 +88,9 @@ public class Predicates implements Cloneable {
 		if (map != null) {
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
-					sb.append(map[x][y]);
+					sb.append(map[x][y].toChar());
 				}
-				sb.append("\\n");
+				sb.append("\n");
 			}
 		}
 		return sb.toString();

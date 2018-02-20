@@ -1,17 +1,15 @@
 package fiubaceldas.grupo04;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 import ontology.Types.ACTIONS;
 
@@ -21,40 +19,87 @@ public class AgentKnowledge {
 
 	private AgentKnowledge() {
 	}
-	
+
 	public ACTIONS getActionFromState(State currentState) {
 		ACTIONS action = stateToAction.get(currentState.getDescription());
 		if (action == null) {
-			final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT, ACTIONS.ACTION_NIL };
+			final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT,
+					ACTIONS.ACTION_NIL };
 			action = all[ThreadLocalRandom.current().nextInt(0, all.length)];
 		}
 		return action;
 	}
 
 	static public AgentKnowledge loadFromFile(String filename) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		try {
-			String jsonString = new String(Files.readAllBytes(Paths.get(filename)));
-			Map<String, QState> json = gson.fromJson(jsonString, new TypeToken<Map<String, QState>>() {
-			}.getType());
-			HashMap<String, QState> table = new HashMap<String, QState>(json);
-			Knowledge k = new Knowledge();
-			k.setQTable(table);
-			return k;
+			AgentKnowledge knowledge = new AgentKnowledge();
+			JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
+
+			try {
+				reader.beginArray();
+				while (reader.hasNext()) {
+					String state = null;
+					ACTIONS action = null;
+					String effect = null;
+					int count = 0, success = 0;
+
+					reader.beginObject();
+					while (reader.hasNext()) {
+						String name = reader.nextName();
+						if (name.equals("state")) {
+							state = reader.nextString();
+						}
+						else if (name.equals("action")) {
+							action = ACTIONS.fromString(reader.nextString());
+						}
+						else if (name.equals("effect")) {
+							action = ACTIONS.fromString(reader.nextString());
+						}
+						else if (name.equals("count")) {
+							count = reader.nextInt();
+						}
+						else if (name.equals("success")) {
+							success = reader.nextInt();
+						}
+						else {
+							reader.skipValue();
+						}
+					}
+					reader.endObject();
+					
+					knowledge.stateToAction.put(state, action);
+				}
+				reader.endArray();
+			}
+			finally {
+				reader.close();
+			}
+
+			return knowledge;
 		}
 		catch (Exception e) {
 			System.err.println("Error loading serialized knowledge from " + filename + ": " + e.getMessage());
 		}
+
 		return null;
 	}
 
 	static public void saveToFile(String filename, Set<Theory> theories) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(filename));
-			String text = gson.toJson(k.QTable());
-			out.write(text);
-			out.close();
+			JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF-8"));
+			writer.setIndent("    ");
+			writer.beginArray();
+			for (Theory t : theories) {
+				writer.beginObject();
+				writer.name("state").value(t.getInitialConditionsString());
+				writer.name("action").value(t.getActonString());
+				writer.name("effect").value(t.getPredictedEffectsString());
+				writer.name("count").value(t.getUsedCount());
+				writer.name("success").value(t.getSuccessCount());
+				writer.endObject();
+			}
+			writer.endArray();
+			writer.close();
 		}
 		catch (Exception e) {
 			System.err.println("Error storing serialized knowledge to " + filename + ": " + e.getMessage());

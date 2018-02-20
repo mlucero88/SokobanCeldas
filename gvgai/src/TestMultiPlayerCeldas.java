@@ -36,7 +36,7 @@ public class TestMultiPlayerCeldas
         
         
         //otros settings
-        boolean visuals = true;
+        boolean visuals = false;
         int seed = new Random().nextInt();
 
         //Qué nivel se utiliza
@@ -45,7 +45,8 @@ public class TestMultiPlayerCeldas
         String level1 = gamesPath + gameName + "_lvl" + levelIdx +".txt";
 
         //nombre de archivo en doned se guardaran las acciones ejecutadas. Si es null no guardará nada
-        String recordActionsFile = "actions_" + gameName + "_lvl" + levelIdx + "_" + seed + ".txt"; 
+//        String recordActionsFile = "actions_" + gameName + "_lvl" + levelIdx + "_" + seed + ".txt"; 
+        String recordActionsFile = null; 
 
         // 1. descomentar la línea de abajo para que el juego inicie para dos jugadores humanos
 //        ArcadeMachine.playOneGameMulti(game, level1, recordActionsFile, seed);

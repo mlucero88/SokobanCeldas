@@ -11,7 +11,7 @@ public class Theory implements Cloneable {
 	private Predicates initialConditions;
 	private Types.ACTIONS action;
 	private Predicates predictedEffects;
-	
+
 	private int usedCount = 0;
 	private int successCount = 0;
 
@@ -19,6 +19,21 @@ public class Theory implements Cloneable {
 		this.initialConditions = initialConditions;
 		this.action = action;
 		this.predictedEffects = predictedEffects;
+	}
+	
+	// Para el parser
+	public String getInitialConditionsString() {
+		return this.initialConditions.toString();
+	}
+
+	// Para el parser
+	public String getActonString() {
+		return this.action.toString();
+	}
+	
+	// Para el parser
+	public String getPredictedEffectsString() {
+		return this.predictedEffects.toString();
 	}
 
 	public int getSuccessCount() {
@@ -40,17 +55,20 @@ public class Theory implements Cloneable {
 	public boolean isSuccesful() {
 		return successCount == usedCount;
 	}
+	
+	public void setCountersAsFailedTheory() {
+		usedCount = 999999999;
+		successCount = 0;
+	}
 
-	public void copyExitosUsos(Theory t) {
-		this.cantExitos = t.getSuccessCount();
-		this.cantUsos = t.getUsedCount();
+	public void copyCounters(Theory t) {
+		this.successCount = t.getSuccessCount();
+		this.usedCount = t.getUsedCount();
 	}
 
 	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
-		Theory t = new Theory();
-		t.allegedConditions = this.allegedConditions.exclusion(teoria.allegedConditions);
-		t.predictedEffects = new Boolean(this.predictedEffects);
-		return t;
+		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects);
+//		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects.exclusion(teoria.predictedEffects));
 	}
 
 	/**
@@ -114,8 +132,8 @@ public class Theory implements Cloneable {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer("");
-		sb.append(initialConditions.toString() + " + " + action + " ===> " + predictedEffects.toString() + " (" + utilityValue + ", " + successCount
-				+ ", " + usedCount + ")");
+		sb.append(initialConditions.toString() + " + " + action + " ===> " + predictedEffects.toString() + " (" + successCount + ", " + usedCount
+				+ ")");
 		return sb.toString();
 	}
 
