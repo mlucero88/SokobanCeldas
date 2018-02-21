@@ -23,7 +23,8 @@ public class AgentKnowledge {
 	}
 
 	public ACTIONS getActionFromState(State currentState) {
-		// El problema aca es q no tiene en cuenta los '*' y los hash fallan. Deberia sacar los hash e implementar un comparador, pero pierdo performance.
+		// El problema aca es q no tiene en cuenta los '*' y los hash fallan. Deberia sacar los hash e implementar un comparador, pero pierdo
+		// performance.
 		Set<Pair<ACTIONS, Double>> actions = stateToAction.get(currentState.getDescription());
 		if (actions == null) {
 			System.out.println(" * Elegi movimiento aleatorio *");
@@ -54,6 +55,7 @@ public class AgentKnowledge {
 				while (reader.hasNext()) {
 					String state = null;
 					ACTIONS action = null;
+					@SuppressWarnings("unused")
 					String effect = null;
 					int count = 0, success = 0;
 

@@ -36,7 +36,7 @@ public class TestMultiPlayerCeldas
         
         
         //otros settings
-        boolean visuals = false;
+        boolean visuals = true;
         int seed = new Random().nextInt();
 
         //Qué nivel se utiliza

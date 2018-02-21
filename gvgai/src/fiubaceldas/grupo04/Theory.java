@@ -67,7 +67,7 @@ public class Theory implements Cloneable {
 	}
 
 	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
-		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects);
+		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, (Predicates) this.predictedEffects.clone());
 		// return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action,
 		// this.predictedEffects.exclusion(teoria.predictedEffects));
 	}
@@ -111,10 +111,7 @@ public class Theory implements Cloneable {
 
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
-		Theory cloned = (Theory) super.clone();
-		cloned.initialConditions = (Predicates) this.initialConditions.clone();
-		cloned.predictedEffects = (Predicates) this.predictedEffects.clone();
-		cloned.action = this.action;
+		Theory cloned = new Theory((Predicates) this.initialConditions.clone(), this.action, (Predicates) this.predictedEffects.clone());
 		cloned.usedCount = this.usedCount;
 		cloned.successCount = this.successCount;
 		return cloned;

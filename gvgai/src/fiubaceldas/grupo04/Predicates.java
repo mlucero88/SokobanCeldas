@@ -17,7 +17,7 @@ public class Predicates implements Cloneable {
 	public Predicates(State currentState) {
 		width = currentState.width;
 		height = currentState.height;
-		map = currentState.map.clone();
+		map = mapClone(currentState.map, width, height);
 	}
 
 	public Predicates exclusion(Predicates other) throws CloneNotSupportedException {
@@ -49,16 +49,16 @@ public class Predicates implements Cloneable {
 		return true;
 	}
 
+
+	protected Predicates() {
+	}
+	
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
-		Predicates cloned = (Predicates) super.clone();
+		Predicates cloned = new Predicates();
 		cloned.height = this.height;
 		cloned.width = this.width;
-		for (int x = 0; x < this.width; x++) {
-			for (int y = 0; y < this.height; y++) {
-				cloned.map[x][y] = this.map[x][y];
-			}
-		}
+		cloned.map = mapClone(this.map, this.width, this.height);
 		return cloned;
 	}
 
@@ -102,5 +102,16 @@ public class Predicates implements Cloneable {
 			}
 		}
 		return sb.toString();
+	}
+
+	private Entity[][] mapClone(Entity[][] map, int w, int h) {
+		Entity[][] cloned = new Entity[w][h];
+
+		for (int x = 0; x < w; ++x) {
+			for (int y = 0; y < h; ++y) {
+				cloned[x][y] = map[x][y];
+			}
+		}
+		return cloned;
 	}
 }
