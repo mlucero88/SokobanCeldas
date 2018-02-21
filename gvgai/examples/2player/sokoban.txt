@@ -22,6 +22,7 @@ BasicGame key_handler=Pulse square_size=50 no_players=2
         avatar wall avatar > stepBack
         bbox avatar  > bounceForward
         bbox wall bbox   > undoAll
+        avatar bbox avatar  > undoAll
         box hole    > transformTo stype=boxin scoreChange=1,1
         boxin ground > transformTo stype=box scoreChange=-1,-1
 		
