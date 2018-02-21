@@ -13,8 +13,8 @@ import tools.ElapsedCpuTimer;
 
 public class Agent extends AbstractMultiPlayer {
 
-	private static final int MAX_TRAINING_ROUNDS = 100000;
-	private static final boolean TRAINING_MODE = false;
+	private static final int MAX_TRAINING_ROUNDS = 1000;
+	private static final boolean TRAINING_MODE = true;
 
 	/* Horrible pero los objetos agentes van cambiando cuando se reinicia el juego y pierdo las teorias generadas.
 	 * Ademas no puedo pasarle las teorias anteriores como parametros al contructor */
