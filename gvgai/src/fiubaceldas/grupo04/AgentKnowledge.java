@@ -4,30 +4,44 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import ontology.Types.ACTIONS;
+import tools.Pair;
 
 public class AgentKnowledge {
 
-	private HashMap<String, ACTIONS> stateToAction = new HashMap<>();
+	private SetMultimap<String, Pair<ACTIONS, Double>> stateToAction = HashMultimap.create();
 
 	private AgentKnowledge() {
 	}
 
 	public ACTIONS getActionFromState(State currentState) {
-		ACTIONS action = stateToAction.get(currentState.getDescription());
-		if (action == null) {
-			final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT,
-					ACTIONS.ACTION_NIL };
-			action = all[ThreadLocalRandom.current().nextInt(0, all.length)];
+		// El problema aca es q no tiene en cuenta los '*' y los hash fallan. Deberia sacar los hash e implementar un comparador, pero pierdo performance.
+		Set<Pair<ACTIONS, Double>> actions = stateToAction.get(currentState.getDescription());
+		if (actions == null) {
+			System.out.println(" * Elegi movimiento aleatorio *");
+			final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT };
+			return all[ThreadLocalRandom.current().nextInt(0, all.length)];
 		}
-		return action;
+		else {
+			Pair<ACTIONS, Double> bestAction = null;
+			for (Pair<ACTIONS, Double> act : actions) {
+				if (bestAction == null) {
+					bestAction = act;
+				}
+				else if (act.second.longValue() > bestAction.second.longValue()) {
+					bestAction = act;
+				}
+			}
+			return bestAction.first;
+		}
 	}
 
 	static public AgentKnowledge loadFromFile(String filename) {
@@ -53,7 +67,7 @@ public class AgentKnowledge {
 							action = ACTIONS.fromString(reader.nextString());
 						}
 						else if (name.equals("effect")) {
-							action = ACTIONS.fromString(reader.nextString());
+							effect = reader.nextString();
 						}
 						else if (name.equals("count")) {
 							count = reader.nextInt();
@@ -66,8 +80,8 @@ public class AgentKnowledge {
 						}
 					}
 					reader.endObject();
-					
-					knowledge.stateToAction.put(state, action);
+
+					knowledge.stateToAction.put(state, new Pair<ACTIONS, Double>(action, new Double((double) success / (double) count)));
 				}
 				reader.endArray();
 			}

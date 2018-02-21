@@ -15,27 +15,32 @@ public class State {
 	public int height;
 	public Entity[][] map;
 
-	private String description;
+	private String description = null;
 
 	public State(Perception p) {
 		width = p.getLevelWidth();
 		height = p.getLevelHeight();
 		map = new Entity[width][height];
 
-		StringBuilder sb = new StringBuilder("");
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
-				char c = p.getAt(x, y);
-				map[x][y] = Entity.fromChar(c);
-				sb.append(c);
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				map[x][y] = Entity.fromChar(p.getAt(x, y));
 			}
-			sb.append("\n");
 		}
-
-		description = sb.toString();
 	}
 
 	public String getDescription() {
+		if (description == null) {
+			StringBuilder sb = new StringBuilder("");
+			for (int y = 1; y < height - 1; y++) {
+				for (int x = 1; x < width - 1; x++) {
+					sb.append(map[x][y].toChar());
+				}
+				sb.append("\n");
+			}
+			description = sb.toString();
+		}
+
 		return description;
 	}
 

@@ -20,7 +20,7 @@ public class Theory implements Cloneable {
 		this.action = action;
 		this.predictedEffects = predictedEffects;
 	}
-	
+
 	// Para el parser
 	public String getInitialConditionsString() {
 		return this.initialConditions.toString();
@@ -30,7 +30,7 @@ public class Theory implements Cloneable {
 	public String getActonString() {
 		return this.action.toString();
 	}
-	
+
 	// Para el parser
 	public String getPredictedEffectsString() {
 		return this.predictedEffects.toString();
@@ -55,9 +55,9 @@ public class Theory implements Cloneable {
 	public boolean isSuccesful() {
 		return successCount == usedCount;
 	}
-	
+
 	public void setCountersAsFailedTheory() {
-		usedCount = 999999999;
+		usedCount = 999999;
 		successCount = 0;
 	}
 
@@ -68,7 +68,8 @@ public class Theory implements Cloneable {
 
 	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
 		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects);
-//		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects.exclusion(teoria.predictedEffects));
+		// return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action,
+		// this.predictedEffects.exclusion(teoria.predictedEffects));
 	}
 
 	/**
@@ -81,19 +82,9 @@ public class Theory implements Cloneable {
 	 * <li>Los efectos predichos por A son iguales o más especificos que los predichos por B.</li>
 	 * </ul>
 	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-
-		Theory other = (Theory) obj;
-
-		return (this.action.equals(other.action) && this.initialConditions.equals(other.initialConditions)
-				&& this.predictedEffects.equals(other.predictedEffects));
+	public boolean same(Theory other) {
+		return (this.action.equals(other.action) && this.initialConditions.same(other.initialConditions)
+				&& this.predictedEffects.same(other.predictedEffects));
 	}
 
 	/**
@@ -104,7 +95,7 @@ public class Theory implements Cloneable {
 	 * </ul>
 	 */
 	public boolean similar(Theory other) {
-		return (this.action.equals(other.action) && this.predictedEffects.equals(other.predictedEffects));
+		return (this.action.equals(other.action) && this.predictedEffects.same(other.predictedEffects));
 	}
 
 	/**
@@ -115,7 +106,7 @@ public class Theory implements Cloneable {
 	 * </ul>
 	 */
 	public boolean incompatible(Theory other) {
-		return (this.initialConditions.equals(other.initialConditions) && !this.predictedEffects.equals(other.predictedEffects));
+		return (this.initialConditions.same(other.initialConditions) && !this.predictedEffects.same(other.predictedEffects));
 	}
 
 	@Override
@@ -130,6 +121,27 @@ public class Theory implements Cloneable {
 	}
 
 	@Override
+	public int hashCode() {
+		StringBuffer sb = new StringBuffer(initialConditions.toString());
+		sb.append(action.toString());
+		return sb.toString().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+
+		Theory other = (Theory) obj;
+
+		return (this.action.equals(other.action) && this.initialConditions.equals(other.initialConditions));
+	}
+
+	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer("");
 		sb.append(initialConditions.toString() + " + " + action + " ===> " + predictedEffects.toString() + " (" + successCount + ", " + usedCount
@@ -137,10 +149,10 @@ public class Theory implements Cloneable {
 		return sb.toString();
 	}
 
-	public static List<Theory> returnEquals(Theory source, Set<Theory> sample) {
+	public static List<Theory> returnSame(Theory source, Set<Theory> sample) {
 		List<Theory> ret = new ArrayList<Theory>();
 		for (Theory t : sample) {
-			if (source.equals(t) && t.isSuccesful())
+			if (source.same(t) && t.isSuccesful())
 				ret.add(t);
 		}
 		return ret;

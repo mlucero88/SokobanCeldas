@@ -3,7 +3,6 @@ package fiubaceldas.grupo04;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import core.game.StateObservationMulti;
@@ -14,20 +13,21 @@ import tools.ElapsedCpuTimer;
 
 public class Agent extends AbstractMultiPlayer {
 
-	private static final int MAX_TRAINING_GAMES = 10000;
+	private static final int MAX_TRAINING_ROUNDS = 100000;
 	private static final boolean TRAINING_MODE = true;
 
 	/* Horrible pero los objetos agentes van cambiando cuando se reinicia el juego y pierdo las teorias generadas.
 	 * Ademas no puedo pasarle las teorias anteriores como parametros al contructor */
-	private static ArrayList<Set<Theory>> theories = new ArrayList<Set<Theory>>(2);
+	private static ArrayList<HashSet<Theory>> theories = new ArrayList<HashSet<Theory>>(2);
 	private static boolean[] finished = new boolean[2];
-	private static int rounds = 0;
+	private static int totalRounds = 0;
 
 	private State lastState = null;
 	private State currentState = null;
 	private ACTIONS lastAction = null;
-	private Entity agentName;
 	private AgentKnowledge knowledge = null;
+	private Entity agentName;
+	private int round = 0;
 	private int playerID;
 
 	public Agent(StateObservationMulti stateObs, ElapsedCpuTimer elapsedTimer, int playerID) {
@@ -39,7 +39,7 @@ public class Agent extends AbstractMultiPlayer {
 		else {
 			finished[playerID] = false;
 			while (theories.size() < 2) {
-				theories.add(new HashSet<Theory>());
+				theories.add(new HashSet<Theory>(4096));
 			}
 		}
 	}
@@ -48,17 +48,24 @@ public class Agent extends AbstractMultiPlayer {
 	public ACTIONS act(StateObservationMulti stateObs, ElapsedCpuTimer elapsedTimer) {
 		currentState = new State(new Perception(stateObs));
 		boolean isDeadlockState = currentState.isBoxDeadlock();
+		boolean isEvenRound = (round++ % 2) == 0;
 
 		if (!TRAINING_MODE) {
+			/* En rondas pares mueve player_A, en impares mueve player_B */
 			if (!isDeadlockState) {
-				return knowledge.getActionFromState(currentState);
+				if ((isEvenRound && agentName == Entity.AGENT_A) || (!isEvenRound && agentName == Entity.AGENT_B)) {
+					return knowledge.getActionFromState(currentState);
+				}
+				else {
+					return ACTIONS.ACTION_NIL;
+				}
 			}
 			System.out.println("*** PERDIMOS EL JUEGO !! ***");
 			throw new ExceptionQuitGame();
 		}
 
 		/* A partir de aca es todo modo entrenamiento */
-		if (rounds >= MAX_TRAINING_GAMES) {
+		if (totalRounds >= MAX_TRAINING_ROUNDS) {
 			if (!finished[playerID]) {
 				AgentKnowledge.saveToFile("agent_" + agentName.toString() + ".json", theories.get(playerID));
 				System.out.println("*** FINALIZÓ EL ENTRENAMIENTO DEL AGENTE_" + agentName.toString() + " ***");
@@ -72,29 +79,50 @@ public class Agent extends AbstractMultiPlayer {
 		}
 		else if (playerID == 0) {
 			// Solo el player A incrementa rondas
-			rounds++;
+			totalRounds++;
 		}
 
 		if (isDeadlockState) {
-			/* NO CONVIENE GUARDAR ESTA TEORIA DE FALLO XQ PUEDE SER QUE EL QUE MOVIO LA CAJA HACIA UN DEADLOCK HAYA SIDO
-			 * EL OTRO JUGADOR. SIEMPRE EL act DE player_A SE EJECUTA ANTES QUE EL DEL player_B, ENTONCES SI FUE player_B
-			 * QUIEN PUSO LA CAJA EN DEADLOCK, ESTOY GUARDANDO LA ULTIMA ACCION DE player_A COMO LA TEORIA QUE HIZO PERDER
-			 * EL JUEGO
-			 */
-			// Theory failedTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState));
-			// failedTheory.setCountersAsFailedTheory();
-			// theories.add(failedTheory);
+			/* Veo quien fue el ultimo que movio y le guardo la teoria como fallida */
+			if ((isEvenRound && agentName == Entity.AGENT_B) || (!isEvenRound && agentName == Entity.AGENT_A)) {
+				/* Este jugador fue quien movio mal */
+				Theory failedTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState));
+				failedTheory.setCountersAsFailedTheory();
+				theories.get(playerID).add(failedTheory);
 
-			throw new ExceptionRestart();
+				throw new ExceptionRestart();
+			}
+			else {
+				/* El otro jugador fue quien movio mal. No hago nada asi se ejecuta el "act" del otro agente */
+				return ACTIONS.ACTION_NIL;
+			}
 		}
 
-		ACTIONS actionToTake = getRandomAction(currentState);
+		/* Aca viene la logica qué hay q hacer dependiendo del numero de ronda. Hay 2 opciones:
+		 * (ronda es par): 		Player_A -> Guarda el estado actual y la accion que va a realizar. Realiza una accion distinta de null 
+		 * 						Player_B -> Con el estado y accion de la ronda anterior, mas el estado actual, arma la teoria (excepto en ronda=0). Realiza accion null
+		 * 
+		 * (ronda es impar):	Player_A -> Con el estado y accion de la ronda anterior, mas el estado actual, arma la teoria. Realiza accion null
+		 * 						Player_B -> Guarda el estado actual y la accion que va a realizar. Realiza una accion distinta de null 
+		 * 
+		 * El diseño es pobre, pero no importa */
 
-		/* Salteo mi primera accion. Espero al turno siguiente para armar la teoria */
-		if (lastState != null) {
+		if ((isEvenRound && agentName == Entity.AGENT_A) || (!isEvenRound && agentName == Entity.AGENT_B)) {
+			ACTIONS actionToTake = getRandomAction(currentState);
+			lastState = currentState;
+			lastAction = actionToTake;
+
+			return actionToTake;
+		}
+		else {
+			/* Caso excepcional que sucede al player_B en la primer ronda de cada juego nuevo */
+			if (lastState == null) {
+				return ACTIONS.ACTION_NIL;
+			}
+
 			Theory localTheory = new Theory(new Predicates(lastState), lastAction, new Predicates(currentState)); // Armamos una teoria local
 
-			List<Theory> equalTheories = Theory.returnEquals(localTheory, theories.get(playerID)); // verificamos si existe una teoria igual
+			List<Theory> equalTheories = Theory.returnSame(localTheory, theories.get(playerID)); // verificamos si existe una teoria igual
 			if (!equalTheories.isEmpty()) {
 				for (Theory t : equalTheories) { // Sí existen teorias iguales las ponderamos
 					t.incSuccessCount();
@@ -115,8 +143,9 @@ public class Agent extends AbstractMultiPlayer {
 						}
 						mutantTheory.copyCounters(t);
 						if (!theories.get(playerID).contains(mutantTheory)) { // sí no existe la agregamos a la lista
+//							theories.get(playerID).remove(t); // olvidamos la teoria anterior
+							assert(theories.get(playerID).remove(t));
 							theories.get(playerID).add(mutantTheory);
-							theories.get(playerID).remove(t); // olvidamos la teoria anterior
 						}
 					}
 				}
@@ -133,16 +162,13 @@ public class Agent extends AbstractMultiPlayer {
 			for (Theory t : incompatibleTheories) {
 				t.incUsedCount();
 			}
-		}
 
-		lastState = currentState;
-		lastAction = actionToTake;
-		return actionToTake;
+			return ACTIONS.ACTION_NIL;
+		}
 	}
 
 	private ACTIONS getRandomAction(State state) {
 		ArrayList<ACTIONS> candidates = state.getPossibleActions(agentName);
-		candidates.add(ACTIONS.ACTION_NIL);
 		return candidates.get(ThreadLocalRandom.current().nextInt(0, candidates.size()));
 	}
 }
