@@ -1,5 +1,7 @@
 package fiubaceldas.grupo04;
 
+import ontology.Types.ACTIONS;
+
 public class Model {
 
 	public enum Entity {
@@ -46,5 +48,17 @@ public class Model {
 			}
 		}
 		throw new IllegalArgumentException("There is no value with name '" + name + " in Enum " + enumeration.getClass().getName());
+	}
+	
+	public class ActionCandidate {
+		public ACTIONS action = ACTIONS.ACTION_NIL;
+		public int utility = 0;
+		public double succesRate = 0;
+		
+		public ActionCandidate(ACTIONS action, int utility, double successRate) {
+			this.action = action;
+			this.utility = utility;
+			this.succesRate = successRate;
+		}
 	}
 }

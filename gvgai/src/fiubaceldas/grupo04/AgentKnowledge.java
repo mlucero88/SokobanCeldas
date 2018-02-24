@@ -1,53 +1,23 @@
 package fiubaceldas.grupo04;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import ontology.Types.ACTIONS;
-import tools.Pair;
 
 public class AgentKnowledge {
-
-	private SetMultimap<String, Pair<ACTIONS, Double>> stateToAction = HashMultimap.create();
 
 	private AgentKnowledge() {
 	}
 
-	public ACTIONS getActionFromState(State currentState) {
-		// El problema aca es q no tiene en cuenta los '*' y los hash fallan. Deberia sacar los hash e implementar un comparador, pero pierdo
-		// performance.
-		Set<Pair<ACTIONS, Double>> actions = stateToAction.get(currentState.getDescription());
-		if (actions == null) {
-			System.out.println(" * Elegi movimiento aleatorio *");
-			final ACTIONS all[] = new ACTIONS[] { ACTIONS.ACTION_UP, ACTIONS.ACTION_DOWN, ACTIONS.ACTION_LEFT, ACTIONS.ACTION_RIGHT };
-			return all[ThreadLocalRandom.current().nextInt(0, all.length)];
-		}
-		else {
-			Pair<ACTIONS, Double> bestAction = null;
-			for (Pair<ACTIONS, Double> act : actions) {
-				if (bestAction == null) {
-					bestAction = act;
-				}
-				else if (act.second.longValue() > bestAction.second.longValue()) {
-					bestAction = act;
-				}
-			}
-			return bestAction.first;
-		}
-	}
-
-	static public AgentKnowledge loadFromFile(String filename) {
+	static public void loadFromFile(String filename, TheoryContainer theories) {
 		try {
-			AgentKnowledge knowledge = new AgentKnowledge();
 			JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
 
 			try {
@@ -55,9 +25,8 @@ public class AgentKnowledge {
 				while (reader.hasNext()) {
 					String state = null;
 					ACTIONS action = null;
-					@SuppressWarnings("unused")
 					String effect = null;
-					int count = 0, success = 0;
+					int count = 0, success = 0, utility = 0;
 
 					reader.beginObject();
 					while (reader.hasNext()) {
@@ -77,30 +46,40 @@ public class AgentKnowledge {
 						else if (name.equals("success")) {
 							success = reader.nextInt();
 						}
+						else if (name.equals("utility")) {
+							utility = reader.nextInt();
+						}
 						else {
 							reader.skipValue();
 						}
 					}
 					reader.endObject();
 
-					knowledge.stateToAction.put(state, new Pair<ACTIONS, Double>(action, new Double((double) success / (double) count)));
+					theories.addOrReplace(new Theory(state, action, effect, count, success, utility));
 				}
 				reader.endArray();
 			}
 			finally {
 				reader.close();
 			}
-
-			return knowledge;
+		}
+		catch (FileNotFoundException e) {
+			try {
+				JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF-8"));
+				writer.beginArray();
+				writer.endArray();
+				writer.close();
+			}
+			catch (Exception e1) {
+				e1.printStackTrace();
+			}
 		}
 		catch (Exception e) {
 			System.err.println("Error loading serialized knowledge from " + filename + ": " + e.getMessage());
 		}
-
-		return null;
 	}
 
-	static public void saveToFile(String filename, Set<Theory> theories) {
+	static public void saveToFile(String filename, TheoryContainer theories) {
 		try {
 			JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF-8"));
 			writer.setIndent("    ");
@@ -110,8 +89,9 @@ public class AgentKnowledge {
 				writer.name("state").value(t.getInitialConditionsString());
 				writer.name("action").value(t.getActonString());
 				writer.name("effect").value(t.getPredictedEffectsString());
-				writer.name("count").value(t.getUsedCount());
-				writer.name("success").value(t.getSuccessCount());
+				writer.name("count").value(t.usedCount);
+				writer.name("success").value(t.successCount);
+				writer.name("utility").value(t.utility);
 				writer.endObject();
 			}
 			writer.endArray();

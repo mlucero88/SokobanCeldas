@@ -1,14 +1,11 @@
 package fiubaceldas.grupo04;
 
-import java.util.Arrays;
-
 import fiubaceldas.grupo04.Model.Entity;
 
 public class Predicates implements Cloneable {
 
 	/* Tiene la informacion de todo el mapa, como State, pero a diferencia de State, puede que en un casillero
-	 * haya un wildcard ('?'), indicando que no me importa esa posicion. Tengo que ver igual si estos wildcards
-	 * se generan al usar alguna heuristica... */
+	 * haya un wildcard ('*'), indicando que no me importa esa posicion */
 
 	private int width;
 	private int height;
@@ -38,7 +35,9 @@ public class Predicates implements Cloneable {
 	 * especifico que B. ¿Qué significa que sea más especifico? que A.x == B.x ó B.x == *. Cada posición del mapa es una condición, y un '*'
 	 * representa una condición (y a su vez una posición) que no se tomará en cuenta
 	 */
-	public boolean same(Predicates other) {
+	@Override
+	public boolean equals(Object obj) {
+		Predicates other = (Predicates) obj;
 		for (int x = 0; x < this.width; ++x) {
 			for (int y = 0; y < this.height; ++y) {
 				if (other.map[x][y] != Entity.WILDCARD && this.map[x][y] != other.map[x][y]) {
@@ -49,10 +48,9 @@ public class Predicates implements Cloneable {
 		return true;
 	}
 
-
 	protected Predicates() {
 	}
-	
+
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		Predicates cloned = new Predicates();
@@ -63,39 +61,11 @@ public class Predicates implements Cloneable {
 	}
 
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + height;
-		result = prime * result + Arrays.deepHashCode(map);
-		result = prime * result + width;
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Predicates other = (Predicates) obj;
-		if (height != other.height)
-			return false;
-		if (!Arrays.deepEquals(map, other.map))
-			return false;
-		if (width != other.width)
-			return false;
-		return true;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("");
 		if (map != null) {
-			for (int y = 1; y < height - 1; y++) {
-				for (int x = 1; x < width - 1; x++) {
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
 					sb.append(map[x][y].toChar());
 				}
 				sb.append("\n");
@@ -113,5 +83,21 @@ public class Predicates implements Cloneable {
 			}
 		}
 		return cloned;
+	}
+
+	// Para el parser
+	public Predicates(String description) {
+		this.width = description.indexOf('\n');
+		this.height = description.length() / (width + 1);
+		this.map = new Entity[width][height];
+
+		int i = 0;
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				map[x][y] = Entity.fromChar(description.charAt(i));
+				++i;
+			}
+			++i; // skip \n
+		}
 	}
 }
