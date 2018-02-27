@@ -16,8 +16,8 @@ import tools.ElapsedCpuTimer;
 public class Agent extends AbstractMultiPlayer {
 
 	private final static int KNOWLEDGE_SAVE_ITERS = 1000;
-	private final static int SLEEP_MILISEC = 200; // Para cuando juego con visuals, asi veo mejor los movimientos
-	private final static int MAX_LOOP_ACTIONS = 6;
+	private final static int SLEEP_MILISEC = 100; // Para cuando juego con visuals, asi veo mejor los movimientos
+	private final static int MAX_LOOP_ACTIONS = 2;
 
 	/* Horrible pero los objetos agentes van cambiando cuando se reinicia el juego y pierdo las teorias generadas.
 	 * Ademas no puedo pasarle las teorias anteriores como parametros al contructor */
@@ -90,6 +90,9 @@ public class Agent extends AbstractMultiPlayer {
 					loopCounter = 0;
 					chooseOtherTheory = true;
 				}
+			}
+			else {
+				loopCounter = 0;
 			}
 
 			lastState = currentState;
