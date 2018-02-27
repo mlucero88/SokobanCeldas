@@ -124,27 +124,27 @@ public class Agent extends AbstractMultiPlayer {
 				}
 			}
 			else { // Si no hay teorias iguales
-					// List<Theory> similarTheories = theories.get(playerID).returnSimilarTheories(localTheory); // obtenemos las teorias similares
-					// if (!similarTheories.isEmpty()) {
-					// for (Theory t : similarTheories) {
-					// Theory mutantTheory;
-					// try {
-					// mutantTheory = t.exclusion(localTheory); // para cada teoría similar aplicamos el algoritmo de exclusión
-					// }
-					// catch (CloneNotSupportedException e) {
-					// e.printStackTrace();
-					// return ACTIONS.ACTION_NIL;
-					// }
-					// mutantTheory.copyCounters(t);
-					// theories.get(playerID).addOrReplace(mutantTheory); // se agrega y quita las que eran mas especificas
-					// }
-					// }
-					// else {
+				List<Theory> similarTheories = theories.get(playerID).returnSimilarTheories(localTheory); // obtenemos las teorias similares
+				if (!similarTheories.isEmpty()) {
+					for (Theory t : similarTheories) {
+						Theory mutantTheory;
+						try {
+							mutantTheory = t.exclusion(localTheory); // para cada teoría similar aplicamos el algoritmo de exclusión
+						}
+						catch (CloneNotSupportedException e) {
+							e.printStackTrace();
+							return ACTIONS.ACTION_NIL;
+						}
+						mutantTheory.copyCounters(t);
+						theories.get(playerID).addOrReplace(mutantTheory); // se agrega y quita las que eran mas especificas
+					}
+				}
+				else {
 					// Ponderamos y agregamos la teoria local
-				localTheory.successCount++;
-				localTheory.usedCount++;
-				theories.get(playerID).addOrReplace(localTheory);
-				// }
+					localTheory.successCount++;
+					localTheory.usedCount++;
+					theories.get(playerID).addOrReplace(localTheory);
+				}
 			}
 
 			// Ajustamos todas las teorias que son erroneas
@@ -170,7 +170,6 @@ public class Agent extends AbstractMultiPlayer {
 	}
 
 	private ACTIONS getAction(State state) {
-		// boolean chooseRandom = (ThreadLocalRandom.current().nextInt(7) == 0);
 		boolean chooseRandom = (ThreadLocalRandom.current().nextInt(theories.get(playerID).size()) % 3 == 0);
 		if (!chooseRandom) {
 			List<Theory> candidatesTheories = theories.get(playerID).returnApplicableTheories(state);

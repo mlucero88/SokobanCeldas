@@ -119,7 +119,7 @@ public class State {
 	 * 			Me muevo a un lugar vacio alejandome de la caja => 30
 	 * 			Me coloco al lado de la caja pero la caja no es movible para el lado apuntado => 20
 	 * 			Ninguno de todos estos casos => 15
-	 * 			Me quedo quieto => 10
+	 * 			Se queda quieto => 10
 	 * 			Caja atorada (pierde) => 0 (se detecta antes de entrar aca)
 	 */
 	public static int calculateUtility(State previous, State current, Entity agent) {

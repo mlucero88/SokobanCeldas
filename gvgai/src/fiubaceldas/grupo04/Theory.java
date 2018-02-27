@@ -36,8 +36,7 @@ public class Theory implements Cloneable {
 
 	public Theory exclusion(Theory teoria) throws CloneNotSupportedException {
 		return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, (Predicates) this.predictedEffects.clone());
-		// return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action,
-		// this.predictedEffects.exclusion(teoria.predictedEffects));
+		// return new Theory(this.initialConditions.exclusion(teoria.initialConditions), teoria.action, this.predictedEffects.exclusion(teoria.predictedEffects));
 	}
 
 	public boolean isApplicableToState(Predicates stateDescription) {
