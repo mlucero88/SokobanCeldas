@@ -6,3 +6,5 @@ examples/.DS_Store
 src/tools/.DS_Store
 /target/
 /bin/
+agent_A.json
+agent_B.json
